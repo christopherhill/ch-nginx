@@ -1,4 +1,4 @@
-##
+#
 # You should look at the following URL's in order to grasp a solid understanding
 # of Nginx configuration files in order to fully unleash the power of Nginx.
 # https://www.nginx.com/resources/wiki/start/
@@ -108,17 +108,34 @@ server {
 	#
 	# include snippets/snakeoil.conf;
 
-	root /var/www/christopherhill.com/;
+	root /var/www/christopherhill.com/dist;
 
 	# Add index.php to the list if you are using PHP
 	index index.html index.htm index.nginx-debian.html;
         server_name www.christopherhill.com; # managed by Certbot
 
+	if ($request_uri = '/robots.txt') {
+		rewrite ^ /robots.txt break;
+	}
+	
+	if ($request_uri = '/sitemap.xml') {
+		rewrite ^ /sitemap.xml break;
+	}
+
+	location ^~ /api {
+		# rewrite ^/api/(.*) /$1 break;
+		proxy_pass http://127.0.0.1:3001/api;
+		proxy_redirect off; 
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header Host $http_host;
+		proxy_set_header X-NginX-Proxy true;
+	}
 
 	location / {
 		# First attempt to serve request as file, then
 		# as directory, then fall back to displaying a 404.
-		try_files $uri $uri/ =404;
+		try_files $uri $uri/ /index.html =404;
 	}
 
 	# pass PHP scripts to FastCGI server
@@ -158,6 +175,7 @@ server {
     if ($host = www.christopherhill.com) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
+
 
 
 	listen 80 ;
